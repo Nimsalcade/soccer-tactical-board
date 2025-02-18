@@ -198,47 +198,72 @@
         const fieldContainer = document.querySelector('.field-container');
         const isWideScreen = window.innerWidth >= 768;
         
-        // Create a wrapper with the same dimensions and properties as the current view
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'fixed';
-        wrapper.style.top = '-9999px';  // Hide it from view
-        wrapper.style.width = fieldContainer.offsetWidth + 'px';
-        wrapper.style.height = fieldContainer.offsetHeight + 'px';
-        wrapper.style.backgroundColor = '#238729';  // Match body background
-        wrapper.style.display = 'flex';
-        wrapper.style.justifyContent = 'center';
-        wrapper.style.alignItems = 'center';
-
-        // Clone the field container with its current state
-        const clonedField = fieldContainer.cloneNode(true);
-        
-        // Maintain the current transform state
         if (isWideScreen) {
-            wrapper.style.width = fieldContainer.offsetWidth + 'px';
-            wrapper.style.height = fieldContainer.offsetHeight + 'px';
-            clonedField.style.transform = 'rotate(90deg)';
-        }
-        
-        wrapper.appendChild(clonedField);
-        document.body.appendChild(wrapper);
+            // For landscape mode, we need to capture in landscape
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.top = '-9999px';
+            wrapper.style.width = fieldContainer.offsetHeight + 'px';  // Swap width and height
+            wrapper.style.height = fieldContainer.offsetWidth + 'px';
+            wrapper.style.backgroundColor = '#238729';
+            wrapper.style.display = 'flex';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.transform = 'rotate(-90deg)';  // Counter-rotate the wrapper
 
-        // Capture the field in its current state
-        html2canvas(wrapper, {
-            backgroundColor: '#238729',
-            scale: 2, // Higher quality
-            width: wrapper.offsetWidth,
-            height: wrapper.offsetHeight,
-            useCORS: true
-        }).then(canvas => {
-            // Create download link
-            const link = document.createElement('a');
-            link.download = 'soccer-tactics.jpg';
-            link.href = canvas.toDataURL('image/jpeg', 0.9);
-            link.click();
+            // Clone the field with all its current content
+            const clonedField = fieldContainer.cloneNode(true);
+            clonedField.style.transform = 'none';  // Remove rotation from field
+            clonedField.style.width = '100%';
+            clonedField.style.height = '100%';
+
+            // Clone all tokens with their current positions
+            const originalTokens = fieldContainer.querySelectorAll('.token');
+            const clonedTokens = clonedField.querySelectorAll('.token');
             
-            // Clean up
-            document.body.removeChild(wrapper);
-        });
+            originalTokens.forEach((token, index) => {
+                const rect = token.getBoundingClientRect();
+                const clonedToken = clonedTokens[index];
+                
+                // Get the computed transform
+                const transform = window.getComputedStyle(token).transform;
+                const matrix = new DOMMatrix(transform);
+                
+                // Apply the current position and rotation
+                clonedToken.style.transform = `rotate(90deg) translate(${matrix.m41}px, ${matrix.m42}px)`;
+            });
+
+            wrapper.appendChild(clonedField);
+            document.body.appendChild(wrapper);
+
+            html2canvas(wrapper, {
+                backgroundColor: '#238729',
+                scale: 2,
+                useCORS: true,
+                onclone: function(clonedDoc) {
+                    const clonedWrapper = clonedDoc.querySelector(wrapper.tagName);
+                    clonedWrapper.style.transform = 'none';
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'soccer-tactics.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                document.body.removeChild(wrapper);
+            });
+        } else {
+            // For portrait mode (mobile), use simpler capture
+            html2canvas(fieldContainer, {
+                backgroundColor: '#238729',
+                scale: 2,
+                useCORS: true
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'soccer-tactics.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
