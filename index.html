@@ -133,7 +133,29 @@
             transform: rotate(-90deg);
         }
     }
+
+    .download-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 10px 20px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        z-index: 1000;
+        transition: background-color 0.3s;
+    }
+
+    .download-btn:hover {
+        background-color: #45a049;
+    }
     </style>
+    <!-- Add html2canvas library -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="field-container">
@@ -168,6 +190,7 @@
             <img src="socccer-ball.png" alt="Soccer Ball">
         </div>
     </div>
+    <button class="download-btn" onclick="downloadTactics()">Download Tactics</button>
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -259,6 +282,29 @@
             document.addEventListener('touchmove', drag, { passive: false });
             document.addEventListener('touchend', dragEnd);
         });
+
+        // Add download functionality
+        function downloadTactics() {
+            const fieldContainer = document.querySelector('.field-container');
+            
+            // Temporarily remove any transform to capture correct orientation
+            const originalTransform = fieldContainer.style.transform;
+            fieldContainer.style.transform = 'none';
+            
+            html2canvas(fieldContainer, {
+                backgroundColor: null,
+                scale: 2, // Higher quality
+            }).then(canvas => {
+                // Restore original transform
+                fieldContainer.style.transform = originalTransform;
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.download = 'soccer-tactics.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        }
     });
     </script>
 </body>
