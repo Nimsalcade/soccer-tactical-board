@@ -197,77 +197,77 @@
     function downloadTactics() {
         const fieldContainer = document.querySelector('.field-container');
         const isWideScreen = window.innerWidth >= 768;
+
+        // Create a wrapper that will maintain aspect ratio
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '0';
+        wrapper.style.left = '0';
+        wrapper.style.width = '1200px';  // Fixed width to ensure consistent capture
+        wrapper.style.height = '800px';   // Fixed height for 3:2 aspect ratio
+        wrapper.style.backgroundColor = 'black';
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.visibility = 'hidden';
+
+        // Clone the field and set it to landscape orientation
+        const clonedField = fieldContainer.cloneNode(true);
+        clonedField.style.width = '100%';
+        clonedField.style.height = '100%';
+        clonedField.style.transform = 'none';  // Remove any existing transforms
+        clonedField.style.position = 'absolute';
+        clonedField.style.backgroundSize = 'cover';
+
+        // Copy all tokens
+        const originalTokens = fieldContainer.querySelectorAll('.token');
+        const clonedTokens = clonedField.querySelectorAll('.token');
         
-        if (isWideScreen) {
-            // Create a temporary wrapper just for the field
-            const wrapper = document.createElement('div');
-            wrapper.style.position = 'fixed';
-            wrapper.style.top = '-9999px';
-            wrapper.style.backgroundColor = 'black';  // Match field background
-            wrapper.style.display = 'flex';
-            wrapper.style.justifyContent = 'center';
-            wrapper.style.alignItems = 'center';
+        originalTokens.forEach((token, index) => {
+            const clonedToken = clonedTokens[index];
+            const rect = token.getBoundingClientRect();
+            const fieldRect = fieldContainer.getBoundingClientRect();
             
-            // Clone the field with current content
-            const clonedField = fieldContainer.cloneNode(true);
+            // Calculate positions as percentages
+            const x = ((rect.left - fieldRect.left) / fieldRect.width) * 100;
+            const y = ((rect.top - fieldRect.top) / fieldRect.height) * 100;
             
-            // Set dimensions to match the rotated field
-            wrapper.style.width = fieldContainer.offsetHeight + 'px';
-            wrapper.style.height = fieldContainer.offsetWidth + 'px';
+            clonedToken.style.position = 'absolute';
+            clonedToken.style.left = `${x}%`;
+            clonedToken.style.top = `${y}%`;
+            clonedToken.style.transform = 'none';
+        });
+
+        wrapper.appendChild(clonedField);
+        document.body.appendChild(wrapper);
+
+        html2canvas(wrapper, {
+            backgroundColor: 'black',
+            scale: 2,
+            useCORS: true,
+            width: 1200,
+            height: 800,
+            windowWidth: 1200,
+            windowHeight: 800
+        }).then(canvas => {
+            // Create a new canvas in landscape orientation
+            const landscapeCanvas = document.createElement('canvas');
+            landscapeCanvas.width = 1200;
+            landscapeCanvas.height = 800;
+            const ctx = landscapeCanvas.getContext('2d');
             
-            // Prepare the cloned field
-            clonedField.style.transform = 'rotate(90deg)';
-            clonedField.style.width = wrapper.style.height;
-            clonedField.style.height = wrapper.style.width;
+            // Draw the captured image in landscape orientation
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, landscapeCanvas.width, landscapeCanvas.height);
+            ctx.drawImage(canvas, 0, 0, 1200, 800);
+
+            const link = document.createElement('a');
+            link.download = 'soccer-tactics.jpg';
+            link.href = landscapeCanvas.toDataURL('image/jpeg', 0.9);
+            link.click();
             
-            // Copy all tokens with their positions
-            const originalTokens = fieldContainer.querySelectorAll('.token');
-            const clonedTokens = clonedField.querySelectorAll('.token');
-            
-            originalTokens.forEach((token, index) => {
-                const clonedToken = clonedTokens[index];
-                const rect = token.getBoundingClientRect();
-                const fieldRect = fieldContainer.getBoundingClientRect();
-                
-                // Calculate relative positions within the field
-                const relativeX = rect.left - fieldRect.left;
-                const relativeY = rect.top - fieldRect.top;
-                
-                // Apply positions while maintaining token orientation
-                clonedToken.style.transform = 'rotate(-90deg)';
-                clonedToken.style.left = relativeY + 'px';
-                clonedToken.style.top = (fieldRect.width - relativeX - token.offsetWidth) + 'px';
-            });
-            
-            wrapper.appendChild(clonedField);
-            document.body.appendChild(wrapper);
-            
-            html2canvas(clonedField, {
-                backgroundColor: 'black',
-                scale: 2,
-                useCORS: true,
-                width: wrapper.offsetHeight,
-                height: wrapper.offsetWidth
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'soccer-tactics.jpg';
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
-                link.click();
-                document.body.removeChild(wrapper);
-            });
-        } else {
-            // For portrait mode, capture just the field
-            html2canvas(fieldContainer, {
-                backgroundColor: 'black',
-                scale: 2,
-                useCORS: true
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'soccer-tactics.jpg';
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
-                link.click();
-            });
-        }
+            document.body.removeChild(wrapper);
+        }).catch(error => {
+            console.error('Error generating image:', error);
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -360,92 +360,6 @@
             document.addEventListener('touchend', dragEnd);
         });
     });
-
-
-
-    function downloadTactics() {
-    const fieldContainer = document.querySelector('.field-container');
-    const isWideScreen = window.innerWidth >= 768;
-    
-    // Create a temporary wrapper div
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'fixed';
-    wrapper.style.top = '-9999px';
-    wrapper.style.left = '-9999px';
-    wrapper.style.backgroundColor = 'black';
-    wrapper.style.padding = '0';
-    wrapper.style.margin = '0';
-    
-    // Clone the field container
-    const clonedField = fieldContainer.cloneNode(true);
-    
-    // Set wrapper and field dimensions based on orientation
-    if (isWideScreen) {
-        // For landscape mode (desktop)
-        wrapper.style.width = fieldContainer.offsetHeight + 'px';
-        wrapper.style.height = fieldContainer.offsetWidth + 'px';
-        clonedField.style.width = '100%';
-        clonedField.style.height = '100%';
-        clonedField.style.transform = 'rotate(90deg)';
-    } else {
-        // For portrait mode (mobile)
-        wrapper.style.width = fieldContainer.offsetWidth + 'px';
-        wrapper.style.height = fieldContainer.offsetHeight + 'px';
-        clonedField.style.width = '100%';
-        clonedField.style.height = '100%';
-        clonedField.style.transform = '';
-    }
-    
-    // Copy token positions
-    const originalTokens = fieldContainer.querySelectorAll('.token');
-    const clonedTokens = clonedField.querySelectorAll('.token');
-    
-    originalTokens.forEach((token, index) => {
-        const clonedToken = clonedTokens[index];
-        const rect = token.getBoundingClientRect();
-        const fieldRect = fieldContainer.getBoundingClientRect();
-        
-        if (isWideScreen) {
-            // For landscape, rotate the coordinates
-            const relativeY = ((rect.left - fieldRect.left) / fieldRect.width) * 100;
-            const relativeX = ((rect.top - fieldRect.top) / fieldRect.height) * 100;
-            
-            clonedToken.style.transform = 'rotate(-90deg)';
-            clonedToken.style.position = 'absolute';
-            clonedToken.style.left = `${100 - relativeX}%`;
-            clonedToken.style.top = `${relativeY}%`;
-        } else {
-            // For portrait, keep original coordinates
-            const relativeX = ((rect.left - fieldRect.left) / fieldRect.width) * 100;
-            const relativeY = ((rect.top - fieldRect.top) / fieldRect.height) * 100;
-            
-            clonedToken.style.transform = '';
-            clonedToken.style.position = 'absolute';
-            clonedToken.style.left = `${relativeX}%`;
-            clonedToken.style.top = `${relativeY}%`;
-        }
-    });
-    
-    wrapper.appendChild(clonedField);
-    document.body.appendChild(wrapper);
-    
-    html2canvas(clonedField, {
-        backgroundColor: 'black',
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        width: isWideScreen ? wrapper.offsetHeight : wrapper.offsetWidth,
-        height: isWideScreen ? wrapper.offsetWidth : wrapper.offsetHeight
-    }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'soccer-tactics.jpg';
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-        link.click();
-        document.body.removeChild(wrapper);
-    }).catch(error => {
-        console.error('Error generating image:', error);
-    });
-}
     </script>
 </body>
 </html>
