@@ -360,6 +360,92 @@
             document.addEventListener('touchend', dragEnd);
         });
     });
+
+
+
+    function downloadTactics() {
+    const fieldContainer = document.querySelector('.field-container');
+    const isWideScreen = window.innerWidth >= 768;
+    
+    // Create a temporary wrapper div
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.top = '-9999px';
+    wrapper.style.left = '-9999px';
+    wrapper.style.backgroundColor = 'black';
+    wrapper.style.padding = '0';
+    wrapper.style.margin = '0';
+    
+    // Clone the field container
+    const clonedField = fieldContainer.cloneNode(true);
+    
+    // Set wrapper and field dimensions based on orientation
+    if (isWideScreen) {
+        // For landscape mode (desktop)
+        wrapper.style.width = fieldContainer.offsetHeight + 'px';
+        wrapper.style.height = fieldContainer.offsetWidth + 'px';
+        clonedField.style.width = '100%';
+        clonedField.style.height = '100%';
+        clonedField.style.transform = 'rotate(90deg)';
+    } else {
+        // For portrait mode (mobile)
+        wrapper.style.width = fieldContainer.offsetWidth + 'px';
+        wrapper.style.height = fieldContainer.offsetHeight + 'px';
+        clonedField.style.width = '100%';
+        clonedField.style.height = '100%';
+        clonedField.style.transform = '';
+    }
+    
+    // Copy token positions
+    const originalTokens = fieldContainer.querySelectorAll('.token');
+    const clonedTokens = clonedField.querySelectorAll('.token');
+    
+    originalTokens.forEach((token, index) => {
+        const clonedToken = clonedTokens[index];
+        const rect = token.getBoundingClientRect();
+        const fieldRect = fieldContainer.getBoundingClientRect();
+        
+        if (isWideScreen) {
+            // For landscape, rotate the coordinates
+            const relativeY = ((rect.left - fieldRect.left) / fieldRect.width) * 100;
+            const relativeX = ((rect.top - fieldRect.top) / fieldRect.height) * 100;
+            
+            clonedToken.style.transform = 'rotate(-90deg)';
+            clonedToken.style.position = 'absolute';
+            clonedToken.style.left = `${100 - relativeX}%`;
+            clonedToken.style.top = `${relativeY}%`;
+        } else {
+            // For portrait, keep original coordinates
+            const relativeX = ((rect.left - fieldRect.left) / fieldRect.width) * 100;
+            const relativeY = ((rect.top - fieldRect.top) / fieldRect.height) * 100;
+            
+            clonedToken.style.transform = '';
+            clonedToken.style.position = 'absolute';
+            clonedToken.style.left = `${relativeX}%`;
+            clonedToken.style.top = `${relativeY}%`;
+        }
+    });
+    
+    wrapper.appendChild(clonedField);
+    document.body.appendChild(wrapper);
+    
+    html2canvas(clonedField, {
+        backgroundColor: 'black',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: isWideScreen ? wrapper.offsetHeight : wrapper.offsetWidth,
+        height: isWideScreen ? wrapper.offsetWidth : wrapper.offsetHeight
+    }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'soccer-tactics.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+        document.body.removeChild(wrapper);
+    }).catch(error => {
+        console.error('Error generating image:', error);
+    });
+}
     </script>
 </body>
 </html>
