@@ -196,24 +196,44 @@
     // Move downloadTactics to global scope
     function downloadTactics() {
         const fieldContainer = document.querySelector('.field-container');
+        const isWideScreen = window.innerWidth >= 768;
         
-        // Temporarily remove any transform to capture correct orientation
-        const originalTransform = fieldContainer.style.transform;
-        fieldContainer.style.transform = 'none';
-        
-        html2canvas(fieldContainer, {
-            backgroundColor: null,
-            scale: 2, // Higher quality
-        }).then(canvas => {
-            // Restore original transform
-            fieldContainer.style.transform = originalTransform;
+        if (isWideScreen) {
+            // For landscape mode, create a wrapper to maintain orientation
+            const wrapper = document.createElement('div');
+            wrapper.style.width = fieldContainer.offsetHeight + 'px';
+            wrapper.style.height = fieldContainer.offsetWidth + 'px';
+            wrapper.style.position = 'fixed';
+            wrapper.style.top = '-9999px';  // Hide it from view
+            wrapper.style.transform = 'rotate(90deg)';
+            wrapper.appendChild(fieldContainer.cloneNode(true));
+            document.body.appendChild(wrapper);
             
-            // Create download link
-            const link = document.createElement('a');
-            link.download = 'soccer-tactics.jpg';
-            link.href = canvas.toDataURL('image/jpeg', 0.9);
-            link.click();
-        });
+            html2canvas(wrapper, {
+                backgroundColor: null,
+                scale: 2, // Higher quality
+            }).then(canvas => {
+                // Create download link
+                const link = document.createElement('a');
+                link.download = 'soccer-tactics.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+                
+                // Clean up
+                document.body.removeChild(wrapper);
+            });
+        } else {
+            // For portrait mode, use the original logic
+            html2canvas(fieldContainer, {
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'soccer-tactics.jpg';
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+            });
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
