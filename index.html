@@ -198,42 +198,47 @@
         const fieldContainer = document.querySelector('.field-container');
         const isWideScreen = window.innerWidth >= 768;
         
+        // Create a wrapper with the same dimensions and properties as the current view
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'fixed';
+        wrapper.style.top = '-9999px';  // Hide it from view
+        wrapper.style.width = fieldContainer.offsetWidth + 'px';
+        wrapper.style.height = fieldContainer.offsetHeight + 'px';
+        wrapper.style.backgroundColor = '#238729';  // Match body background
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.alignItems = 'center';
+
+        // Clone the field container with its current state
+        const clonedField = fieldContainer.cloneNode(true);
+        
+        // Maintain the current transform state
         if (isWideScreen) {
-            // For landscape mode, create a wrapper to maintain orientation
-            const wrapper = document.createElement('div');
-            wrapper.style.width = fieldContainer.offsetHeight + 'px';
-            wrapper.style.height = fieldContainer.offsetWidth + 'px';
-            wrapper.style.position = 'fixed';
-            wrapper.style.top = '-9999px';  // Hide it from view
-            wrapper.style.transform = 'rotate(90deg)';
-            wrapper.appendChild(fieldContainer.cloneNode(true));
-            document.body.appendChild(wrapper);
-            
-            html2canvas(wrapper, {
-                backgroundColor: null,
-                scale: 2, // Higher quality
-            }).then(canvas => {
-                // Create download link
-                const link = document.createElement('a');
-                link.download = 'soccer-tactics.jpg';
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
-                link.click();
-                
-                // Clean up
-                document.body.removeChild(wrapper);
-            });
-        } else {
-            // For portrait mode, use the original logic
-            html2canvas(fieldContainer, {
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'soccer-tactics.jpg';
-                link.href = canvas.toDataURL('image/jpeg', 0.9);
-                link.click();
-            });
+            wrapper.style.width = fieldContainer.offsetWidth + 'px';
+            wrapper.style.height = fieldContainer.offsetHeight + 'px';
+            clonedField.style.transform = 'rotate(90deg)';
         }
+        
+        wrapper.appendChild(clonedField);
+        document.body.appendChild(wrapper);
+
+        // Capture the field in its current state
+        html2canvas(wrapper, {
+            backgroundColor: '#238729',
+            scale: 2, // Higher quality
+            width: wrapper.offsetWidth,
+            height: wrapper.offsetHeight,
+            useCORS: true
+        }).then(canvas => {
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'soccer-tactics.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+            
+            // Clean up
+            document.body.removeChild(wrapper);
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
