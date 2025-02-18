@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Field</title>
+    <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #238729;
+    }
+
+    .field-container {
+        position: relative;
+        width: min(98vw, calc(98vh * 0.671));
+        height: min(146.4vw, 98vh);
+        background-image: url('f-1.png');
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: black;
+        aspect-ratio: 9/12;
+        margin: 10px;
+    }
+
+    .staging-area {
+        position: absolute;
+        display: flex;
+        gap: 10px;
+        padding: 2px;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+    }
+
+    .white-team {
+        top: 1%;
+        left: 11%;
+        transform-origin: left center;
+    }
+
+    .red-team {
+        bottom: 1%;
+        right: 10%;
+        transform-origin: right center;
+        flex-direction: row-reverse;
+    }
+
+    .token {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 10px;
+        font-weight: bold;
+        cursor: grab;
+        user-select: none;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: absolute;
+        touch-action: none;
+    }
+
+    .token.white {
+        background-color: rgb(255, 255, 255);
+        color: rgb(0, 0, 0);
+    }
+
+    .token.red {
+        background-color: red;
+        color: white;
+    }
+
+    .token.dragging {
+        cursor: grabbing;
+        z-index: 1000;
+    }
+
+    .token:hover {
+        transform: scale(1.1);
+    }
+
+    /* Soccer ball styling: uses same token styles but a smaller size */
+    .token.ball {
+        width: 15px;
+        height: 15px;
+    }
+    .token.ball img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    @media screen and (min-width: 768px) {
+        .field-container {
+            transform: rotate(90deg);
+            width: min(98vh, calc(98vw * 0.671));
+            height: min(146.4vh, 98vw);
+            margin: 5px;
+        }
+
+        .staging-area {
+            /* Remove default token rotation as it's now handled in JavaScript */
+        }
+
+        .white-team {
+            top: 48%;
+            left: 8%;
+        }
+
+        .red-team {
+            bottom: 48%;
+            right: 8%;
+        }
+
+        .token {
+            transform: rotate(-90deg);
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="field-container">
+        <!-- White team tokens -->
+        <div class="token white" id="white1" data-number="1">1</div>
+        <div class="token white" id="white2" data-number="2">2</div>
+        <div class="token white" id="white3" data-number="3">3</div>
+        <div class="token white" id="white4" data-number="4">4</div>
+        <div class="token white" id="white5" data-number="5">5</div>
+        <div class="token white" id="white6" data-number="6">6</div>
+        <div class="token white" id="white7" data-number="7">7</div>
+        <div class="token white" id="white8" data-number="8">8</div>
+        <div class="token white" id="white9" data-number="9">9</div>
+        <div class="token white" id="white10" data-number="10">10</div>
+        <div class="token white" id="white11" data-number="11">11</div>
+
+        <!-- Red team tokens -->
+        <div class="token red" id="red1" data-number="1">1</div>
+        <div class="token red" id="red2" data-number="2">2</div>
+        <div class="token red" id="red3" data-number="3">3</div>
+        <div class="token red" id="red4" data-number="4">4</div>
+        <div class="token red" id="red5" data-number="5">5</div>
+        <div class="token red" id="red6" data-number="6">6</div>
+        <div class="token red" id="red7" data-number="7">7</div>
+        <div class="token red" id="red8" data-number="8">8</div>
+        <div class="token red" id="red9" data-number="9">9</div>
+        <div class="token red" id="red10" data-number="10">10</div>
+        <div class="token red" id="red11" data-number="11">11</div>
+
+        <!-- Soccer Ball -->
+        <div class="token ball" id="ball">
+            <img src="socccer-ball.png" alt="Soccer Ball">
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tokens = document.querySelectorAll('.token');
+        
+        // Initialize token positions
+        tokens.forEach((token, index) => {
+            if (token.classList.contains('ball')) {
+                // Center the ball in the field container (adjusting for its 20px size)
+                token.style.left = "calc(50% - 10px)";
+                token.style.top = "calc(50% - 10px)";
+            } else if (token.classList.contains('white')) {
+                token.style.left = `${11 + (index % 11) * 35}px`;
+                token.style.top = '10px';
+            } else {
+                token.style.right = `${11 + (index % 11) * 35}px`;
+                token.style.bottom = '10px';
+            }
+        });
+
+        tokens.forEach(token => {
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            let xOffset = 0;
+            let yOffset = 0;
+
+            function dragStart(e) {
+                if (e.type === "touchstart") {
+                    initialX = e.touches[0].clientX - xOffset;
+                    initialY = e.touches[0].clientY - yOffset;
+                } else {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                }
+
+                // Allow dragging when clicking on the token or any child (like the ball's image)
+                if (e.target === token || token.contains(e.target)) {
+                    isDragging = true;
+                    token.classList.add('dragging');
+                }
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+
+                    if (e.type === "touchmove") {
+                        currentX = e.touches[0].clientX - initialX;
+                        currentY = e.touches[0].clientY - initialY;
+                    } else {
+                        currentX = e.clientX - initialX;
+                        currentY = e.clientY - initialY;
+                    }
+
+                    // Directly use the computed deltas; no coordinate swap is required for landscape mode.
+                    xOffset = currentX;
+                    yOffset = currentY;
+
+                    setTranslate(currentX, currentY, token);
+                }
+            }
+
+            function dragEnd(e) {
+                initialX = currentX;
+                initialY = currentY;
+                isDragging = false;
+                token.classList.remove('dragging');
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                const isWideScreen = window.innerWidth >= 768;
+                
+                if (isWideScreen) {
+                    // Maintain the token's rotation and apply translation directly in landscape mode
+                    el.style.transform = `rotate(-90deg) translate(${xPos}px, ${yPos}px)`;
+                } else {
+                    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+                }
+            }
+
+            token.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+
+            token.addEventListener('touchstart', dragStart, { passive: false });
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('touchend', dragEnd);
+        });
+    });
+    </script>
+</body>
+</html>
